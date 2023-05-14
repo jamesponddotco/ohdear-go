@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
+	"git.sr.ht/~jamesponddotco/httpx-go"
 	"git.sr.ht/~jamesponddotco/ohdear-go/internal/endpoint"
 	"git.sr.ht/~jamesponddotco/ohdear-go/internal/jsonutil"
 )
@@ -118,4 +121,60 @@ func (s *SitesService) Get(ctx context.Context, id uint) (*Site, *Response, erro
 	}
 
 	return &site, ret, nil
+}
+
+// Add adds a new site to your account.
+//
+// [API Reference].
+//
+// [API Reference]: https://ohdear.app/docs/integrations/the-oh-dear-api#add-a-site-through-the-api
+func (s *SitesService) Add(ctx context.Context, site *Site) (*Site, *Response, error) {
+	if ctx == nil {
+		return nil, nil, ErrNilContext
+	}
+
+	if site == nil {
+		return nil, nil, ErrNilSite
+	}
+
+	if site.URL == "" {
+		return nil, nil, fmt.Errorf("%w: URL cannot be empty", ErrInvalidURL)
+	}
+
+	// Oh Dear requires URLs with HTTP or HTTPS prefixes.
+	if !strings.HasPrefix(site.URL, "http://") && !strings.HasPrefix(site.URL, "https://") {
+		return nil, nil, fmt.Errorf("%w: URL must start with http:// or https://", ErrInvalidURL)
+	}
+
+	if _, err := url.ParseRequestURI(site.URL); err != nil {
+		return nil, nil, fmt.Errorf("%w: %w", ErrInvalidURL, err)
+	}
+
+	if site.TeamID == 0 {
+		return nil, nil, ErrInvalidTeamID
+	}
+
+	payload, err := httpx.WriteJSON(site)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%w", err)
+	}
+
+	path := DefaultBaseURL + endpoint.Sites
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, payload)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ret, err := s.client.Do(ctx, req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var addedSite Site
+	if err := json.Unmarshal(ret.Body, &addedSite); err != nil {
+		return nil, nil, fmt.Errorf("could not unmarshal added site: %w", err)
+	}
+
+	return &addedSite, ret, nil
 }
