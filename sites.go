@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 
 	"git.sr.ht/~jamesponddotco/httpx-go"
 	"git.sr.ht/~jamesponddotco/ohdear-go/internal/endpoint"
 	"git.sr.ht/~jamesponddotco/ohdear-go/internal/jsonutil"
+	"git.sr.ht/~jamesponddotco/ohdear-go/internal/urlutil"
 )
 
 // SitesService handles communication with the /sites endpoint of Oh Dear's API.
@@ -137,17 +136,8 @@ func (s *SitesService) Add(ctx context.Context, site *Site) (*Site, *Response, e
 		return nil, nil, ErrNilSite
 	}
 
-	if site.URL == "" {
-		return nil, nil, fmt.Errorf("%w: URL cannot be empty", ErrInvalidURL)
-	}
-
-	// Oh Dear requires URLs with HTTP or HTTPS prefixes.
-	if !strings.HasPrefix(site.URL, "http://") && !strings.HasPrefix(site.URL, "https://") {
-		return nil, nil, fmt.Errorf("%w: URL must start with http:// or https://", ErrInvalidURL)
-	}
-
-	if _, err := url.ParseRequestURI(site.URL); err != nil {
-		return nil, nil, fmt.Errorf("%w: %w", ErrInvalidURL, err)
+	if err := urlutil.Validate(site.URL); err != nil {
+		return nil, nil, fmt.Errorf("%w", err)
 	}
 
 	if site.TeamID == 0 {
