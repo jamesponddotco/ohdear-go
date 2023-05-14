@@ -28,6 +28,7 @@ type Site struct {
 	MarkedForDeletionAt                  *string       `json:"marked_for_deletion_at,omitempty"`
 	BrokenLinksWhitelistedURLs           *string       `json:"broken_links_whitelisted_urls,omitempty"`
 	Notes                                *string       `json:"notes,omitempty"`
+	FriendlyName                         *string       `json:"friendly_name,omitempty"`
 	Label                                string        `json:"label,omitempty"`
 	SortURL                              string        `json:"sort_url,omitempty"`
 	URL                                  string        `json:"url,omitempty"`
