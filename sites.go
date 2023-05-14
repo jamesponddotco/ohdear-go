@@ -178,3 +178,32 @@ func (s *SitesService) Add(ctx context.Context, site *Site) (*Site, *Response, e
 
 	return &addedSite, ret, nil
 }
+
+// Remove removes a site from your account.
+//
+// [API Reference].
+//
+// [API Reference]: https://ohdear.app/docs/integrations/the-oh-dear-api#deleting-a-site
+func (s *SitesService) Remove(ctx context.Context, id uint) (*Response, error) {
+	if ctx == nil {
+		return nil, ErrNilContext
+	}
+
+	if id == 0 {
+		return nil, ErrInvalidSiteID
+	}
+
+	path := DefaultBaseURL + endpoint.Sites + "/" + strconv.Itoa(int(id))
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+
+	ret, err := s.client.Do(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
